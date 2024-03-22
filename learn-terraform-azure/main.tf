@@ -26,6 +26,7 @@ resource "azurerm_storage_account" "front_end_storage_account" {
   account_kind             = "StorageV2"
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  
 
 
   static_website {
