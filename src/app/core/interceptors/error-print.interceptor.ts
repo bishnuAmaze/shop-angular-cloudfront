@@ -5,9 +5,9 @@ import {
   HttpInterceptor,
   HttpRequest,
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { NotificationService } from '../notification.service';
-import { tap } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 
 @Injectable()
 export class ErrorPrintInterceptor implements HttpInterceptor {
@@ -15,19 +15,25 @@ export class ErrorPrintInterceptor implements HttpInterceptor {
 
   intercept(
     request: HttpRequest<unknown>,
-    next: HttpHandler
+    next: HttpHandler,
   ): Observable<HttpEvent<unknown>> {
     return next.handle(request).pipe(
-      tap({
-        error: () => {
-          const url = new URL(request.url);
+      catchError((err: any) => {
+        let errorMessage;
 
-          this.notificationService.showError(
-            `Request to "${url.pathname}" failed. Check the console for the details`,
-            0
-          );
-        },
-      })
+        if (err.status === 401) {
+          errorMessage = `Authentication failed. Please check your credentials.`;
+        } else if (err.status === 403) {
+          errorMessage = `Authorization failed. You do not have the necessary permissions.`;
+        } else {
+          const url = new URL(request.url);
+          errorMessage = `Request to "${url.pathname}" failed. Check the console for the details`;
+        }
+
+        this.notificationService.showError(errorMessage, 0);
+
+        return throwError(err);
+      }),
     );
   }
 }
